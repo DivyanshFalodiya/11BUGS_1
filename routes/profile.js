@@ -76,13 +76,31 @@ router.post("/:id", async (req, res) => {
 // Upvote a profile
 router.post("/:id/upvote", authController.isAuthenticated, async (req, res) => {
   try {
-    const id = req.params.id;
+    // const id = req.params.id;
     // if (req.user._id.equals(id)) return errorHander.handleBadRequest(res);
 
     const user = await User.findById(id);
     if (!user) return errorHander.handleNotFound(res, "User Not Found!");
+
+    const upvoteList = user.review.filter((r) => r.value === 1);
+    const upvotes =
+      upvoteList.length !== 0 ? upvoteList.reduce((p, c) => p + c) : 0;
+
+    const downvoteList = user.review.filter((r) => r.value === -1);
+    const downvotes =
+      downvoteList.length !== 0 ? downvoteList.reduce((p, c) => p + c) : 0;
+
+    const karma = scoreController.calculateKarma({
+      github: user.scores.github,
+      codeforces: user.scores.codeforces,
+      codechef: user.scores.codechef,
+      upvotes,
+      downvotes,
+    });
+
     await User.findByIdAndUpdate(id, {
       $pull: { review: { user: req.user._id } },
+      karma: karma,
     });
     const update = await User.findByIdAndUpdate(id, {
       $push: { review: { user: req.user._id, value: 1 } },
@@ -99,11 +117,28 @@ router.post(
   authController.isAuthenticated,
   async (req, res) => {
     try {
-      const id = req.params.id;
+      // const id = req.params.id;
       // if (req.user._id.equals(id)) return errorHander.handleBadRequest(res);
 
       const user = await User.findById(id);
       if (!user) return errorHander.handleNotFound(res, "User Not Found!");
+
+      const upvoteList = user.review.filter((r) => r.value === 1);
+      const upvotes =
+        upvoteList.length !== 0 ? upvoteList.reduce((p, c) => p + c) : 0;
+
+      const downvoteList = user.review.filter((r) => r.value === -1);
+      const downvotes =
+        downvoteList.length !== 0 ? downvoteList.reduce((p, c) => p + c) : 0;
+
+      const karma = scoreController.calculateKarma({
+        github: user.scores.github,
+        codeforces: user.scores.codeforces,
+        codechef: user.scores.codechef,
+        upvotes,
+        downvotes,
+      });
+
       await User.findByIdAndUpdate(id, {
         $pull: { review: { user: req.user._id } },
       });
